@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【管理】批量添加模板-成本计算器-</title>
+    <link rel="stylesheet" href="./bootstrap-4.6.1-dist/css/bootstrap.min.css" crossorigin="anonymous" />
+    <script type="text/javascript" src="jquery.js"></script>
+    <script type="text/javascript" src="./xlsx.core.min.js"></script>
+    <script type="text/javascript" src="./bootstrap-4.6.1-dist/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript" src="./bootstrap-4.6.1-dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var cityData = new Array;
+            var getProvince = {
+                "url": "http://175.178.251.107:7793/province",
+                "method": "GET",
+                 
+            };
+            $.ajax(getProvince).done(function (response) {
+                var data = response.data;
+                $("#provinceSelect").append('<option selected value="none">请选择...</option>');
+                for (let index = 0; index < data.length; index++) {
+                    $("#provinceSelect").append('<option value="' + data[index].id + '">' + data[index].name + '</option>');
+                }
+            });
+            $('#excel-file').change(function (e) {
+                var files = e.target.files;
+                var fileReader = new FileReader();
+                fileReader.onload = function (ev) {
+                    try {
+                        var data = ev.target.result,
+                            workbook = XLSX.read(data, {
+                                type: 'binary'
+                            }), // 以二进制流方式读取得到整份excel表格对象
+                            persons = []; // 存储获取到的数据
+                    } catch (e) {
+                        alert('文件类型不正确');
+                        return;
+                    }
+
+                    // 表格的表格范围，可用于判断表头是否数量是否正确
+                    var fromTo = '';
+                    // 遍历每张表读取
+                    for (var sheet in workbook.Sheets) {
+                        if (workbook.Sheets.hasOwnProperty(sheet)) {
+                            fromTo = workbook.Sheets[sheet]['!ref'];
+                            console.log(fromTo);
+                            persons = persons.concat(XLSX.utils.sheet_to_json(workbook.Sheets[sheet]));
+                            break; // 如果只取第一张表，就取消注释这行
+                        }
+                    }
+                    console.log(persons);
+                    cityData = persons;
+                    $("#table-body").empty();
+                    var tmpCityData = "";
+                    for (let index = 0; index < cityData.length; index++) {
+                        cityData[index].c = cityData[index].c.replace(/\D/g, "")
+                        var tmpTemple = '<tr>'
+                            + '    <th scope="row">' + (index + 1) + '</th>'
+                        if (cityData[index].a != undefined) {
+                            tmpCityData = cityData[index].a + "-";
+                        }
+                        if (cityData[index].b == undefined) {
+                            cityData[index].b = "全境"
+                        }
+                        cityData[index].b = tmpCityData + cityData[index].b;
+                        tmpTemple = tmpTemple + '    <td>' + cityData[index].b + '</td>'
+                        tmpTemple = tmpTemple + '    <td>' + cityData[index].c + '</td></tr>'
+                        $("#table-body").append(tmpTemple);
+                    }
+                };
+                // 以二进制方式打开文件
+                fileReader.readAsBinaryString(files[0]);
+
+            });
+
+            $("#add-city").click(function () {
+                $("#add-item-modal").modal('hide');
+                if ($("#provinceSelect").val() == "none") {
+                    $("#failed-modal").modal('show');
+                    return
+                }
+                if (cityData.length == 0) {
+                    $("#failed-modal").modal('show');
+                    return
+                }
+                $("#loading-modal").modal('show');
+                var tmpData1 = new Array;
+                for (let index = 0; index < cityData.length; index++) {
+                    tmpData1.push({
+                        "provinceId": $("#provinceSelect").val(),
+                        "cityName": cityData[index].b,
+                        "price": cityData[index].c
+                    })
+
+                }
+                console.log(tmpData1)
+                var addItems = {
+                    "url": "http://175.178.251.107:7793/addCity",
+                    "method": "POST",
+                     
+                    "contentType": 'application/json',
+                    "data": JSON.stringify(tmpData1),
+                };
+                $.ajax(addItems).done(function (response) {
+                    $("#loading-modal").modal('hide');
+                    if (response.msg == "success") {
+                        $("#success-modal").modal('show');
+                    } else {
+                        $("#failed-modal").modal('show');
+                    }
+
+                })
+            });
+            $("#goback").click(function () {
+                window.location.replace("./address.html");
+            });
+            $("#success-reload").click(function () {
+                location.reload(true);
+            });
+        });
+    </script>
+</head>
+
+<body style="padding: 10px 20px 10px 20px;">
+    <div class="card">
+        <div class="card-header">
+            成本计算器&nbsp;&nbsp;<span class="badge badge-info" style="font-size: 11px;">管理</span>
+            <button id="goback" type="button" style="float: right;margin-left: 4px;" class="btn btn-primary">返回</button>
+        </div>
+        <div class="card-body">
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <label class="input-group-text" for="provinceSelect">省份：</label>
+                </div>
+                <select class="custom-select selectpicker" id="provinceSelect">
+                </select>
+            </div>
+            <label for="basic-url" style="color: red;">请按照【特定格式】的文件录入！</label><br />
+            <label for="basic-url">●文件格式：xls或者xlsx的表格文件</label><br />
+            <label for="basic-url">●表格的表头：如图所示，均为小写字母【a】、【b】、【c】</label><br />
+            <img src="./excel-header.png" class="img-thumbnail" alt="格式图片"><br />
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="inputGroupFileAddon01">上传文件</span>
+                </div>
+                <div class="custom-file">
+                    <input type="file" class="custom-file-input" id="excel-file"
+                        aria-describedby="inputGroupFileAddon01">
+                    <label class="custom-file-label" for="excel-file">选择文件</label>
+                </div>
+            </div>
+            <br />
+            <label for="basic-url" style="color: red;">确认下方数据无误后，再点击【全部添加】按钮！</label><br />
+            <button type="button" class="btn btn-success" id="add-city">全部添加</button>
+            <div id="goods-data" style="margin-top: 10px;">
+                <table class="table">
+                    <thead class="thead-light">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">城市</th>
+                            <th scope="col">价格（元/方）</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- loading-modal -->
+    <div class="modal fade" id="loading-modal" data-backdrop="static" data-keyboard="false" tabindex="-1"
+        aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">正在加载</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- success-modal -->
+    <div class="modal fade" id="success-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">加载成功</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center">
+                        <svg t="1673618252071" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="2732" width="64" height="64">
+                            <path
+                                d="M512 149.333333c200.298667 0 362.666667 162.368 362.666667 362.666667s-162.368 362.666667-362.666667 362.666667S149.333333 712.298667 149.333333 512 311.701333 149.333333 512 149.333333z m0 64c-164.949333 0-298.666667 133.717333-298.666667 298.666667s133.717333 298.666667 298.666667 298.666667 298.666667-133.717333 298.666667-298.666667-133.717333-298.666667-298.666667-298.666667z m169.045333 127.04l45.909334 44.586667-271.829334 279.722667-136.832-141.952 46.08-44.416 90.944 94.336 225.728-232.277334z"
+                                fill="#1afa29" p-id="2733"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" id="success-reload">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- failed-modal -->
+    <div class="modal fade" id="failed-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">加载失败</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center">
+                        <svg t="1673618702719" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="4129" width="64" height="64">
+                            <path
+                                d="M512 128c211.2 0 384 172.8 384 384s-172.8 384-384 384-384-172.8-384-384 172.8-384 384-384m0-64C262.4 64 64 262.4 64 512s198.4 448 448 448 448-198.4 448-448-198.4-448-448-448z"
+                                fill="#333333" p-id="4130"></path>
+                            <path d="M377.6 646.4m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4131">
+                            </path>
+                            <path d="M646.4 377.6m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4132">
+                            </path>
+                            <path d="M377.6 377.6m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4133">
+                            </path>
+                            <path d="M646.4 646.4m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4134">
+                            </path>
+                            <path d="M353.6 625.152l271.552-271.552 45.248 45.248-271.552 271.552z" fill="#333333"
+                                p-id="4135"></path>
+                            <path d="M353.6 398.848l45.248-45.248 271.552 271.552-45.248 45.248z" fill="#333333"
+                                p-id="4136"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" id="reload">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增规则 -->
+    <div class="modal fade" id="add-item-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">添加干线费模板</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <a href="./insertAddress.html">>>批量模板添加</a>
+                    <form>
+                        <div class="form-group">
+                            <label for="modal-item-province" class="col-form-label">省份：</label>
+                            <select class="form-control" id="modal-item-province">
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="col-form-label">城市名称：</label>
+                            <textarea rows="2" class="form-control" id="modal-item-name"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="col-form-label">价格：</label>
+                            <input type="text" class="form-control" id="modal-item-price">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="add-item-button">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+
+
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【管理】商品管理-成本计算器</title>
+    <link rel="stylesheet" href="./bootstrap-4.6.1-dist/css/bootstrap.min.css" crossorigin="anonymous" />
+    <script type="text/javascript" src="jquery.js"></script>
+    <script type="text/javascript" src="./bootstrap-4.6.1-dist/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript" src="./bootstrap-4.6.1-dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#gohome").click(function () {
+                window.location.replace("./index.html");
+            });
+
+            $("#goGoods").click(function () {
+                window.location.replace("./goods.html");
+            });
+
+            $("#goPublicItem").click(function () {
+                window.location.replace("./publicItem.html");
+            });
+
+            $("#goAddress").click(function () {
+                window.location.replace("./address.html");
+            });
+
+        });
+    </script>
+</head>
+
+<body style="padding: 10px 20px 10px 20px;">
+    <div class="card">
+        <div class="card-header">
+            成本计算器&nbsp;&nbsp;<span class="badge badge-info" style="font-size: 11px;">管理</span>
+            <button id="gohome" type="button" style="float: right;" class="btn btn-primary">返回主页</button>
+        </div>
+        <div class="card-body" style="width: 90%;margin: 0 auto;text-align: center;">
+            <div class="list-group">
+                <button type="button" class="list-group-item list-group-item-action active" aria-current="true">
+                    管理面板
+                  </button>
+                <button type="button" id="goGoods" class="list-group-item list-group-item-action">前往【商品管理】</button>
+                <button type="button" id="goPublicItem" class="list-group-item list-group-item-action">前往【通用配置管理】</button>
+                <button type="button" id="goAddress" class="list-group-item list-group-item-action">前往【干线费管理】</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+</html>

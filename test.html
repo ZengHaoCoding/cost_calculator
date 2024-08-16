@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./bootstrap-4.6.1-dist/css/bootstrap.min.css" crossorigin="anonymous" />
+    <script type="text/javascript" src="jquery.js"></script>
+    <script type="text/javascript" src="json2Excel.js"></script>
+    <script type="text/javascript" src="./bootstrap-select/js/bootstrap-select.js"></script>
+    <link rel="stylesheet" type="text/css" href="./bootstrap-select/css/bootstrap-select.css">
+    <script type="text/javascript" src="./bootstrap-4.6.1-dist/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#citySelect").empty();
+
+            var getCity = {
+                "url": "http://175.178.251.107:7793/province/1",
+                "method": "GET",
+                "async": false,
+            };
+            $.ajax(getCity).done(function (response) {
+                var data = response.data;
+                for (let index = 0; index < data.length; index++) {
+                    $("#citySelect").append('<option value="' + data[index].price + '">' + data[index].cityName + '</option>');
+                }
+            });
+            $("#citySelect").selectpicker({
+
+            });
+
+
+        });
+
+    </script>
+</head>
+
+<body>
+    <div class="form-group">
+        <select id="citySelect" class="selectpicker show-tick form-control" multiple data-live-search="true" multiple
+            data-max-options="1">
+        </select>
+    </div>
+
+
+
+</body>
+
+</html>

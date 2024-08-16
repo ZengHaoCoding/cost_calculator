@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【管理】商品管理-成本计算器</title>
+    <link rel="stylesheet" href="./bootstrap-4.6.1-dist/css/bootstrap.min.css" crossorigin="anonymous" />
+    <script type="text/javascript" src="jquery.js"></script>
+    <script type="text/javascript" src="./bootstrap-4.6.1-dist/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript" src="./bootstrap-4.6.1-dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var tmpId;
+            var getAllGoodsAndItems = {
+                "url": "http://175.178.251.107:7793/goodsAndItems/all",
+                "method": "GET",
+                 
+            };
+            $.ajax(getAllGoodsAndItems).done(function (response) {
+                var data = response.data;
+                $("#table-body").on('click', 'button', function () {
+                    var type = ($(this).attr("id")).split("-")[0];
+                    var id = ($(this).attr("id")).split("-")[1];
+                    if (type == "delect") {
+                        $("#loading-modal").modal('show');
+                        var delectGoods = {
+                            "url": "http://175.178.251.107:7793/delectGoods/" + id,
+                            "method": "GET",
+                             
+                        };
+                        $.ajax(delectGoods).done(function (response) {
+                            $("#loading-modal").modal('hide');
+                            if (response.msg == "success") {
+                                $("#success-modal").modal('show');
+                            } else {
+                                $("#failed-modal").modal('show');
+                            }
+
+                        })
+                    } else if (type == "delectItem1") {
+                        $("#loading-modal").modal('show');
+                        var delectItem1 = {
+                            "url": "http://175.178.251.107:7793/delectItem1/" + id,
+                            "method": "GET",
+                             
+                        };
+                        $.ajax(delectItem1).done(function (response) {
+                            $("#loading-modal").modal('hide');
+                            if (response.msg == "success") {
+                                $("#success-modal").modal('show');
+                            } else {
+                                $("#failed-modal").modal('show');
+                            }
+
+                        })
+                    } else if (type == "delectItem2") {
+                        $("#loading-modal").modal('show');
+                        var delectItem2 = {
+                            "url": "http://175.178.251.107:7793/delectItem2/" + id,
+                            "method": "GET",
+                             
+                        };
+                        $.ajax(delectItem2).done(function (response) {
+                            $("#loading-modal").modal('hide');
+                            if (response.msg == "success") {
+                                $("#success-modal").modal('show');
+                            } else {
+                                $("#failed-modal").modal('show');
+                            }
+
+                        })
+                    }  else if (type == "addtItem") {
+                        $("#add-item-modal").modal('show');
+                        tmpId = id;
+                    } else {
+
+                    }
+                });
+                for (let index = 0; index < data.length; index++) {
+                    var tmpTemple = '<tr>'
+                        + '    <th scope="row">' + (index + 1) + '</th>'
+                        + '    <td>' + data[index].goodsId + '</td>'
+                        + '    <td>' + data[index].name + '</td>'
+                        + '    <td>'
+                    for (let x = 0; x < data[index].item1.length; x++) {
+                        tmpTemple = tmpTemple + '<button id="delectItem1-' + data[index].item1[x].id + '" style="border: none;" class="badge badge-pill badge-danger"> - </button>' + data[index].item1[x].itemName + ' | ￥' + data[index].item1[x].price + '<br />'
+                    }
+                    tmpTemple = tmpTemple + '</td><td>'
+                    for (let x = 0; x < data[index].item2.length; x++) {
+                        tmpTemple = tmpTemple + '<button id="delectItem2-' + data[index].item2[x].id + '" style="border: none;" class="badge badge-pill badge-danger"> - </button>' + data[index].item2[x].itemName + ' | ￥' + data[index].item2[x].price + '<br />'
+                    }
+                    tmpTemple = tmpTemple + '</td><td>'
+                        + '        <button id="addtItem-' + data[index].goodsId + '" type="button" class="btn btn-primary btn-sm">新增规格</button>'
+                        + '        <button id="delect-' + data[index].goodsId + '" type="button" class="btn btn-secondary btn-sm">删除商品</button>'
+                        + '    </td>'
+                        + '</tr>'
+                    $("#table-body").append(tmpTemple);
+                }
+
+            });
+            $("#add-item-button").click(function () {
+                var id = tmpId;
+                $("#add-item-modal").modal('hide');
+                $("#loading-modal").modal('show');
+                var addItems = {
+                    "url": "http://175.178.251.107:7793/addItems/" + $("#modal-item-type").val(),
+                    "method": "POST",
+                     
+                    "contentType": 'application/json',
+                    "data": JSON.stringify([{
+                        "goodsId": id,
+                        "itemName": $("#modal-item-name").val(),
+                        "price": $("#modal-item-price").val()
+                    }]),
+                };
+                $.ajax(addItems).done(function (response) {
+                    $("#loading-modal").modal('hide');
+                    if (response.msg == "success") {
+                        $("#success-modal").modal('show');
+                    } else {
+                        $("#failed-modal").modal('show');
+                    }
+
+                })
+            });
+            $("#gohome").click(function () {
+                window.location.replace("./index.html");
+            });
+            $("#open-add-goods-modal").click(function () {
+                $("#add-goods-modal").modal('show');
+            });
+            $("#success-reload").click(function () {
+                location.reload(true);
+            });
+
+            var tmpItem1 = 1
+            $("#modal-goods-item1-add").click(function () {
+                $("div#item1-add").append(
+                    '<p style="display: flex;">'
+                    + '                名称：<input style="width: 35%;" type="text" class="form-control"'
+                    + '                    id="modal-goods-item1-name-' + tmpItem1 + '">'
+                    + '                &nbsp;'
+                    + '                价格：<input style="width: 28%;" type="text" class="form-control"'
+                    + '                    id="modal-goods-item1-price-' + tmpItem1 + '">'
+                    + '            </p>'
+                );
+                tmpItem1 += 1;
+            });
+
+            var tmpItem2 = 0
+            $("button#modal-goods-item2-add").click(function () {
+                $("div#item2-add").append(
+                    '<p style="display: flex;">'
+                    + '                名称：<input style="width: 35%;" type="text" class="form-control"'
+                    + '                    id="modal-goods-item2-name-' + tmpItem2 + '">'
+                    + '                &nbsp;'
+                    + '                价格：<input style="width: 28%;" type="text" class="form-control"'
+                    + '                    id="modal-goods-item2-price-' + tmpItem2 + '">'
+                    + '            </p>'
+                );
+                tmpItem2 += 1;
+            });
+
+            $("#add-goods-button").click(function () {
+                var addGoods = {
+                    "url": "http://175.178.251.107:7793/addGoods",
+                    "method": "POST",
+                     
+                    "contentType": 'application/json',
+                    "data": JSON.stringify({
+                        "goodsId": $("#modal-goods-id").val(),
+                        "name": $("#modal-goods-name").val()
+                    }),
+                };
+                var tmpData1 = new Array;
+                for (let index = 0; index < tmpItem1; index++) {
+                    tmpData1.push({
+                        "goodsId": $("#modal-goods-id").val(),
+                        "itemName": $("#modal-goods-item1-name-" + index).val(),
+                        "price": $("#modal-goods-item1-price-" + index).val()
+                    })
+                    
+                }
+                var tmpData2 = new Array;
+                for (let index = 0; index < tmpItem2; index++) {
+                    tmpData2.push({
+                        "goodsId": $("#modal-goods-id").val(),
+                        "itemName": $("#modal-goods-item2-name-" + index).val(),
+                        "price": $("#modal-goods-item2-price-" + index).val()
+                    })
+                }
+                
+                var addItems1 = {
+                    "url": "http://175.178.251.107:7793/addItems/1",
+                    "method": "POST",
+                     
+                    "contentType": 'application/json',
+                    "data": JSON.stringify(tmpData1),
+                };
+                var addItems2 = {
+                    "url": "http://175.178.251.107:7793/addItems/2",
+                    "method": "POST",
+                     
+                    "contentType": 'application/json',
+                    "data": JSON.stringify(tmpData2),
+                };
+                
+                $.ajax(addGoods).done(function (response) {
+                    if (response.msg == "success") {
+                        $.ajax(addItems1);
+                        $.ajax(addItems2);
+                        $("#add-goods-modal").modal('hide');
+                        $("#success-modal").modal('show');
+                    } else {
+                        $("#failed-modal").modal('show');
+                    }
+
+                })
+            });
+            $("#goadmin").click(function () {
+                window.location.replace("./admin.html");
+            });
+        });
+    </script>
+</head>
+
+<body style="padding: 10px 20px 10px 20px;">
+    <div class="card">
+        <div class="card-header">
+            成本计算器&nbsp;&nbsp;<span class="badge badge-info" style="font-size: 11px;">管理</span>
+            <button id="gohome" type="button" style="float: right;margin-left: 4px;" class="btn btn-primary">前台</button>
+            <button id="goadmin" type="button" style="float: right;" class="btn btn-info">管理面板</button>
+        </div>
+        <div class="card-body">
+            <button type="button" class="btn btn-success" id="open-add-goods-modal">新增商品</button>
+            <div id="goods-data" style="margin-top: 10px;">
+                <table class="table">
+                    <thead class="thead-light">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">型号</th>
+                            <th scope="col">名称</th>
+                            <th scope="col">规格1</th>
+                            <th scope="col"> 特殊配置</th>
+                            <th scope="col">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- loading-modal -->
+    <div class="modal fade" id="loading-modal" data-backdrop="static" data-keyboard="false" tabindex="-1"
+        aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">正在加载</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- success-modal -->
+    <div class="modal fade" id="success-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">加载成功</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center">
+                        <svg t="1673618252071" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="2732" width="64" height="64">
+                            <path
+                                d="M512 149.333333c200.298667 0 362.666667 162.368 362.666667 362.666667s-162.368 362.666667-362.666667 362.666667S149.333333 712.298667 149.333333 512 311.701333 149.333333 512 149.333333z m0 64c-164.949333 0-298.666667 133.717333-298.666667 298.666667s133.717333 298.666667 298.666667 298.666667 298.666667-133.717333 298.666667-298.666667-133.717333-298.666667-298.666667-298.666667z m169.045333 127.04l45.909334 44.586667-271.829334 279.722667-136.832-141.952 46.08-44.416 90.944 94.336 225.728-232.277334z"
+                                fill="#1afa29" p-id="2733"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" id="success-reload">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- failed-modal -->
+    <div class="modal fade" id="failed-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">加载失败</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center">
+                        <svg t="1673618702719" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="4129" width="64" height="64">
+                            <path
+                                d="M512 128c211.2 0 384 172.8 384 384s-172.8 384-384 384-384-172.8-384-384 172.8-384 384-384m0-64C262.4 64 64 262.4 64 512s198.4 448 448 448 448-198.4 448-448-198.4-448-448-448z"
+                                fill="#333333" p-id="4130"></path>
+                            <path d="M377.6 646.4m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4131">
+                            </path>
+                            <path d="M646.4 377.6m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4132">
+                            </path>
+                            <path d="M377.6 377.6m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4133">
+                            </path>
+                            <path d="M646.4 646.4m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4134">
+                            </path>
+                            <path d="M353.6 625.152l271.552-271.552 45.248 45.248-271.552 271.552z" fill="#333333"
+                                p-id="4135"></path>
+                            <path d="M353.6 398.848l45.248-45.248 271.552 271.552-45.248 45.248z" fill="#333333"
+                                p-id="4136"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" id="reload">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增规则 -->
+    <div class="modal fade" id="add-item-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">添加商品规格</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="recipient-name" class="col-form-label">规格类型:</label>
+                            <select class="form-control" id="modal-item-type">
+                                <option value="1">规格1</option>
+                                <option value="2">规格2</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="col-form-label">名称:</label>
+                            <input type="text" class="form-control" id="modal-item-name">
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="col-form-label">价格:</label>
+                            <input type="text" class="form-control" id="modal-item-price">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="add-item-button">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增商品 -->
+    <div class="modal fade" id="add-goods-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">添加商品规格</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="message-text" class="col-form-label">商品型号:</label>
+                        <input type="text" class="form-control" id="modal-goods-id">
+                    </div>
+                    <div class="form-group">
+                        <label for="message-text" class="col-form-label">商品名称:</label>
+                        <input type="text" class="form-control" id="modal-goods-name">
+                    </div>
+                    <div class="form-group">
+                        <label for="message-text" class="col-form-label">规格1:<span
+                                style="color: red;">（必填）</span><button id="modal-goods-item1-add" style="border: none;"
+                                class="badge badge-pill badge-success">＋</button></label>
+                        <div id="item1-add">
+                            <p style="display: flex;">
+                                名称：<input style="width: 35%;" type="text" class="form-control"
+                                    id="modal-goods-item1-name-0">
+                                &nbsp;
+                                价格：<input style="width: 28%;" type="text" class="form-control"
+                                    id="modal-goods-item1-price-0">
+                            </p>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="message-text" class="col-form-label">规格2:（可选）<button id="modal-goods-item2-add"
+                                style="border: none;" class="badge badge-pill badge-success">＋</button></label>
+                        <div id="item2-add"></div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="add-goods-button">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+</html>

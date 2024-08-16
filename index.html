@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="./bootstrap-4.6.1-dist/css/bootstrap.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" type="text/css" href="./bootstrap-select/css/bootstrap-select.css">
+    <script type="text/javascript" src="jquery.js"></script>
+    <script type="text/javascript" src="json2Excel.js"></script>
+    <script type="text/javascript" src="./bootstrap-4.6.1-dist/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript" src="./bootstrap-select/js/bootstrap-select.js"></script>
+    <title>成本计算器</title>
+    <script type="text/javascript">
+        function emptyModalData() {
+            $('#modal-goods-id').empty();
+            $('#modal-goods-id').append('<option value="none"></option>');
+            $('#modal-goods-item1').empty();
+            $('#modal-goods-item1').append('<option value="none"></option>');
+            $("#modal-goods-item2").empty();
+            $("#modal-goods-item2").append(
+                '<div class="form-check">'
+                + '        <label class="form-check-label" for="defaultCheck">'
+                + '            无'
+                + '        </label>'
+                + '</div>'
+            );
+            $("#modal-goods-item3").empty();
+            $("#modal-goods-item3").append(
+                '<div class="form-check">'
+                + '        <label class="form-check-label" for="defaultCheck003">'
+                + '            无'
+                + '        </label>'
+                + '</div>'
+            );
+            $('#modal-goods-installationCharge').val("0");
+            $('#modal-goods-quantity').val("1");
+            $("#provinceSelect").empty();
+            $("#citySelect").empty();
+            $("#citySelect").selectpicker('refresh');
+        }
+        $(document).ready(function () {
+            var goodsObj = new Object();
+            var goodsPriceSum = 0;
+            var getGoods = {
+                "url": "http://175.178.251.107:7793/goods",
+                "method": "GET",
+
+            };
+
+            $("#success-reload").click(function () {
+                location.reload(true);
+            });
+            $("#show-add-modal").click(function () {
+                $("#modal-goods-id").empty();
+                $('#modal-goods-addressCost').val("0");
+                $("#modal-goods-id").append('<option value="none"></option>');
+                $("#provinceSelect").empty();
+
+                $.ajax(getGoods).done(function (response) {
+                    var data = response.data;
+                    for (let index = 0; index < data.length; index++) {
+                        $("#modal-goods-id").append('<option value="' + data[index].goodsId + '|' + data[index].name + '">' + data[index].goodsId + '|' + data[index].name + '</option>');
+                    }
+                });
+                var getProvince = {
+                    "url": "http://175.178.251.107:7793/province",
+                    "method": "GET",
+                };
+                $.ajax(getProvince).done(function (response) {
+                    var data = response.data;
+                    $("#provinceSelect").append('<option selected></option>');
+                    for (let index = 0; index < data.length; index++) {
+                        $("#provinceSelect").append('<option value="' + data[index].id + '|' + data[index].name + '">' + data[index].name + '</option>');
+                    }
+                });
+                $("#citySelect").empty();
+                $("#add-modal").modal('show');
+            });
+
+            $('#modal-goods-id').change(function () {
+                var selectGoods = $(this).val();
+                var selectGoodsId = selectGoods.split("|")[0];
+                var getItemsByGoodsId = {
+                    "url": "http://175.178.251.107:7793/goods/" + selectGoodsId,
+                    "method": "GET",
+
+                };
+                var getPublicItems = {
+                    "url": "http://175.178.251.107:7793/publicItems",
+                    "method": "GET",
+
+                };
+                $("#modal-goods-item1").empty();
+                $("#modal-goods-item1").append('<option value="none"></option>');
+                $("#modal-goods-item2").empty();
+                $("#modal-goods-item2").append(
+                    '<div class="form-check">'
+                    + '        <label class="form-check-label" for="defaultCheck">'
+                    + '            无'
+                    + '        </label>'
+                    + '</div>'
+                );
+                $("#modal-goods-item3").empty();
+                $("#modal-goods-item3").append(
+                    '<div class="form-check">'
+                    + '        <label class="form-check-label" for="defaultCheck003">'
+                    + '            无'
+                    + '        </label>'
+                    + '</div>'
+                );
+
+                $.ajax(getItemsByGoodsId).done(function (response) {
+                    var data = response.data;
+                    for (let index = 0; index < data.item1.length; index++) {
+                        $("#modal-goods-item1").append('<option value="' + data.item1[index].itemName + "|" + data.item1[index].price + '">' + data.item1[index].itemName + " | ￥" + data.item1[index].price + '</option>');
+                    }
+                    if (data.item2.length > 0) {
+                        $("#modal-goods-item2").empty();
+                        for (let index = 0; index < data.item2.length; index++) {
+                            $("#modal-goods-item2").append(
+                                '<div class="form-check">'
+                                + '    <input class="form-check-input modal-goods-item2-checkbox" type="checkbox" value="' + data.item2[index].itemName + "|" + data.item2[index].price + '" id="defaultCheck2' + index + '">'
+                                + '        <label class="form-check-label" for="defaultCheck2' + index + '">'
+                                + data.item2[index].itemName + " | ￥" + data.item2[index].price
+                                + '        </label>'
+                                + '</div>'
+                            );
+                        }
+                    }
+                    $.ajax(getPublicItems).done(function (response) {
+                        var data = response.data;
+                        if (data.length > 0) {
+                            $("#modal-goods-item3").empty();
+                            for (let index = 0; index < data.length; index++) {
+                                $("#modal-goods-item3").append(
+                                    '<div class="form-check">'
+                                    + '    <input class="form-check-input modal-goods-item3-checkbox" type="checkbox" value="' + data[index].itemName + "|" + data[index].price + '" id="defaultCheck3' + index + '">'
+                                    + '        <label class="form-check-label" for="defaultCheck3' + index + '">'
+                                    + data[index].itemName + " | ￥" + data[index].price
+                                    + '        </label>'
+                                    + '</div>'
+                                );
+                            }
+                        }
+                    });
+                });
+            });
+
+            var tmp = 0;
+            $("#add").click(function () {
+                var selectGoods = $('#modal-goods-id').val();
+                var selectGoodsId = selectGoods.split("|")[0];
+                var selectGoodsName = selectGoods.split("|")[1];
+                var selectGoodsItem1 = $('#modal-goods-item1').val().split("|");
+                var selectGoodsItem2 = $('.modal-goods-item2-checkbox:checked');
+                var selectGoodsItem3 = $('.modal-goods-item3-checkbox:checked');
+                var selectGoodsItem2SumPrice = 0;
+                var selectGoodsItem3SumPrice = 0;
+                var selectGoodsInstallationCharge = $('#modal-goods-installationCharge').val();
+                var selectGoodsQuantity = $('#modal-goods-quantity').val();
+                var selectGoodsAddressCost = $('#modal-goods-addressCost').val().split("|")[0].replace(" 元/方", "");
+                var selectGoodsAddress = $('#modal-goods-address').val();
+                var selectGoodsV = $('#modal-goods-v').val();
+                if (selectGoods == "none") {
+                    $("#add-modal").modal('hide');
+                    $("#failed-modal").modal('show');
+                    emptyModalData();
+                    return
+                }
+                if ($('#modal-goods-item1').val() == "none") {
+                    $("#add-modal").modal('hide');
+                    $("#failed-modal").modal('show');
+                    emptyModalData();
+                    return
+                }
+                if (!$.isNumeric(selectGoodsQuantity)) {
+                    $("#add-modal").modal('hide');
+                    $("#failed-modal").modal('show');
+                    emptyModalData();
+                    return
+                }
+                if (!$.isNumeric(selectGoodsInstallationCharge)) {
+                    $("#add-modal").modal('hide');
+                    $("#failed-modal").modal('show');
+                    emptyModalData();
+                    return
+                }
+                if (!$.isNumeric(selectGoodsV)) {
+                    $("#add-modal").modal('hide');
+                    $("#failed-modal").modal('show');
+                    emptyModalData();
+                    return
+                }
+                var selectGoodsItem2List = new Array;
+                var selectGoodsItem2Temple = '';
+
+                var selectGoodsItem3List = new Array;
+                var selectGoodsItem3Temple = '';
+
+                $.each(selectGoodsItem2, function () {
+                    selectGoodsItem2SumPrice += parseInt($(this).val().split("|")[1])
+                    selectGoodsItem2List.push($(this).val());
+                    selectGoodsItem2Temple += '<span class="badge badge-pill badge-success" style="margin-top: 3px;">' + $(this).val().split("|")[0] + " | ￥" + $(this).val().split("|")[1] + '</span>&nbsp&nbsp;';
+                });
+
+                $.each(selectGoodsItem3, function () {
+                    selectGoodsItem3SumPrice += parseInt($(this).val().split("|")[1])
+                    selectGoodsItem3List.push($(this).val());
+                    selectGoodsItem3Temple += '<span class="badge badge-pill badge-primary" style="margin-top: 3px;">' + $(this).val().split("|")[0] + " | ￥" + $(this).val().split("|")[1] + '</span>&nbsp&nbsp;';
+                });
+
+                var selectGoodsSum = parseInt(selectGoodsQuantity) * (parseInt(selectGoodsItem1[1]) + parseInt(selectGoodsItem2SumPrice) + parseInt(selectGoodsItem3SumPrice) + parseInt(selectGoodsInstallationCharge) + (parseInt(selectGoodsV)*parseInt(selectGoodsAddressCost)))
+                goodsPriceSum += selectGoodsSum;
+                $("#sumPrice").text(goodsPriceSum);
+                goodsObj[tmp] = {
+                    "商品型号": selectGoodsId,
+                    "商品名称": selectGoodsName,
+                    "规格1": selectGoodsItem1[0],
+                    "规格1价格": selectGoodsItem1[1],
+                    "通用配置": selectGoodsItem3List.join("<br/>"),
+                    "通用配置总价格": selectGoodsItem3SumPrice,
+                    " 特殊配置": selectGoodsItem2List.join("<br/>"),
+                    " 特殊配置总价格": selectGoodsItem2SumPrice,
+                    "安装费（单套）": selectGoodsInstallationCharge,
+                    "数量（套）": selectGoodsQuantity,
+                    "收货地址": selectGoodsAddress,
+                    "干线费单价（元/方）": selectGoodsAddressCost,
+                    "单套体积（方）": selectGoodsV,
+                    "干线费总价": (parseInt(selectGoodsV)*parseInt(selectGoodsAddressCost)),
+                    "小计": selectGoodsSum,
+                }
+
+                $(first_form).on('click', 'button', function () {
+                    var delectId = ($(this).parent().parent().attr("id")).split("_")[1];
+                    goodsPriceSum = goodsPriceSum - goodsObj[delectId]["小计"];
+                    $("#sumPrice").text(goodsPriceSum);
+                    delete goodsObj[delectId];
+                    $(this).parent().parent().remove();
+                });
+                $(first_form).append(
+                    '<li class="list-group-item" style="display: flex;" id="goods_' + tmp + '">'
+                    + '<div style="width: 7%;float: left;">'
+                    + '<button style="border: none;" class="badge badge-pill badge-danger delect-goods"> - </button>'
+                    + '</div>'
+                    + '<div style="width: 93%;float: right;">'
+                    + '<p style="font-weight: 600;">商品型号：' + selectGoodsId + '</p>'
+                    + '<p style="font-weight: 600;">商品名称：' + selectGoodsName + '</p>'
+                    + '<div class="form-group">'
+                    + '<label for="exampleInputPassword1">规格1（￥' + selectGoodsItem1[1] + '）</label>'
+                    + '<div style="display: flex;">'
+                    + '<input type="text" class="form-control" id="item1_' + tmp + '" value="' + selectGoodsItem1[0] + '" disabled>'
+                    + '</div>'
+                    + '</div>'
+                    + '<div class="form-group">'
+                    + '<label for="exampleInputPassword1"> 特殊配置（总￥' + selectGoodsItem2SumPrice + '）</label>'
+                    + '<div style="display: flex;flex-wrap:wrap">'
+                    + selectGoodsItem2Temple
+                    + '</div>'
+                    + '</div>'
+                    + '<div class="form-group">'
+                    + '<label for="exampleInputPassword1">通用配置（总￥' + selectGoodsItem3SumPrice + '）</label>'
+                    + '<div style="display: flex;flex-wrap:wrap">'
+                    + selectGoodsItem3Temple
+                    + '</div>'
+                    + '</div>'
+                    + '<div class="form-group">'
+                    + '<label for="exampleInputPassword1">单套安装费：</label>'
+                    + '<div style="display: flex;">'
+                    + '<input type="text" class="form-control" id="installationCharge_' + tmp + '" value="' + selectGoodsInstallationCharge + '" disabled>'
+                    + '</div>'
+                    + '</div>'
+                    + '<div class="form-group">'
+                    + '<label for="exampleInputPassword1">干线费单价：（' + '体积' + selectGoodsV + '方，共' + (parseInt(selectGoodsV)*parseInt(selectGoodsAddressCost)) + '元' + '）</label>'
+                    + '<div style="display: flex;">'
+                    + '<input type="text" class="form-control" id="address_' + tmp + '" value="' + selectGoodsAddress + '" disabled>'
+                    + '</div>'
+                    + '<div style="display: flex;">'
+                    + '<input type="text" class="form-control" id="addressCost_' + tmp + '" value="' + selectGoodsAddressCost + ' 元/方" disabled>'
+                    + '</div>'
+                    + '</div>'
+                    + '<div class="form-group">'
+                    + '<label for="exampleInputPassword1">数量：（套）</label>'
+                    + '<div style="display: flex;">'
+                    + '<input type="text" class="form-control" id="quantity_' + tmp + '" value="' + selectGoodsQuantity + '" disabled>'
+                    + '</div>'
+                    + '</div>'
+                    + '<p style="font-weight: 600;">小计：￥' + selectGoodsSum + '</p>'
+                    + '</div>'
+                    + '</li>'
+                );
+                tmp = tmp + 1;
+                $("#add-modal").modal('hide');
+                emptyModalData();
+            });
+
+            $("#provinceSelect").change(function () {
+                $("#citySelect").empty();
+                $('#modal-goods-addressCost').val("0");
+                var tmpProvince = $(this).val().split("|");
+                var getCity = {
+                    "url": "http://175.178.251.107:7793/province/" + tmpProvince[0],
+                    "method": "GET",
+                };
+                $.ajax(getCity).done(function (response) {
+                    var data = response.data;
+                    for (let index = 0; index < data.length; index++) {
+                        $("#citySelect").append('<option value="' + data[index].price + '|' + tmpProvince[1] + data[index].cityName + '">' + data[index].cityName + '</option>');
+                    }
+                    $('#citySelect').selectpicker('refresh');
+                });
+
+            });
+            $("#citySelect").change(function () {
+                var tmpCityData = $('#citySelect').val()[0].split("|");
+                $('#modal-goods-address').val(tmpCityData[1]);
+                $('#modal-goods-addressCost').val(tmpCityData[0] + " 元/方");
+            });
+
+            $("#to_admin").click(function () {
+                window.open("./admin.html", "_blank");
+            });
+            $("#2excel").click(function () {
+                console.log(JSON.stringify(goodsObj));
+                JSONToExcelConvertor(Object.values(goodsObj), $.now() + "成本清单")
+            });
+        });
+    </script>
+</head>
+
+<body style="padding: 10px 20px 30px 20px;">
+    <div class="card">
+        <div class="card-header">
+            <span id="to_admin">成本计算器</span>
+            <button id="2excel" style="float: right;" type="button" class="btn btn-outline-success">导出Excel</button>
+        </div>
+        <div class="card-body">
+            <ul class="list-group">
+                <li class="list-group-item list-group-item-info" aria-current="true">商品清单</li>
+                <div id="first_form">
+
+                </div>
+                <a class="list-group-item list-group-item-action" id="show-add-modal">
+                    <div style="text-align:center;font-weight: 600;">+添加商品</div>
+                </a>
+            </ul>
+            <br />
+            <ul class="list-group">
+                <li class="list-group-item list-group-item-success" aria-current="true">总价：￥<span id="sumPrice"
+                        style="float: right;font-weight: 600;">0</span></li>
+
+            </ul>
+        </div>
+    </div>
+
+    <!-- loading-modal -->
+    <div class="modal fade" id="loading-modal" data-backdrop="static" data-keyboard="false" tabindex="-1"
+        aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">正在加载</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- success-modal -->
+    <div class="modal fade" id="success-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">加载成功</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center">
+                        <svg t="1673618252071" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="2732" width="64" height="64">
+                            <path
+                                d="M512 149.333333c200.298667 0 362.666667 162.368 362.666667 362.666667s-162.368 362.666667-362.666667 362.666667S149.333333 712.298667 149.333333 512 311.701333 149.333333 512 149.333333z m0 64c-164.949333 0-298.666667 133.717333-298.666667 298.666667s133.717333 298.666667 298.666667 298.666667 298.666667-133.717333 298.666667-298.666667-133.717333-298.666667-298.666667-298.666667z m169.045333 127.04l45.909334 44.586667-271.829334 279.722667-136.832-141.952 46.08-44.416 90.944 94.336 225.728-232.277334z"
+                                fill="#1afa29" p-id="2733"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" id="success-reload">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- failed-modal -->
+    <div class="modal fade" id="failed-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">加载失败</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center">
+                        <svg t="1673618702719" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="4129" width="64" height="64">
+                            <path
+                                d="M512 128c211.2 0 384 172.8 384 384s-172.8 384-384 384-384-172.8-384-384 172.8-384 384-384m0-64C262.4 64 64 262.4 64 512s198.4 448 448 448 448-198.4 448-448-198.4-448-448-448z"
+                                fill="#333333" p-id="4130"></path>
+                            <path d="M377.6 646.4m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4131">
+                            </path>
+                            <path d="M646.4 377.6m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4132">
+                            </path>
+                            <path d="M377.6 377.6m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4133">
+                            </path>
+                            <path d="M646.4 646.4m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4134">
+                            </path>
+                            <path d="M353.6 625.152l271.552-271.552 45.248 45.248-271.552 271.552z" fill="#333333"
+                                p-id="4135"></path>
+                            <path d="M353.6 398.848l45.248-45.248 271.552 271.552-45.248 45.248z" fill="#333333"
+                                p-id="4136"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" id="reload">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="add-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">添加商品</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="recipient-name" class="col-form-label">商品:</label>
+                            <select class="form-control" id="modal-goods-id">
+                                <option value="none"></option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="col-form-label">规格1:（必选）</label>
+                            <select class="form-control" id="modal-goods-item1">
+                                <option value="none"></option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="col-form-label">通用配置:（可选）</label>
+                            <div id="modal-goods-item3" style="padding-left: 1%;">
+                                <div class="form-check">
+                                    <label class="form-check-label" for="defaultCheck003">
+                                        无
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="col-form-label"> 特殊配置:（可选）</label>
+                            <div id="modal-goods-item2" style="padding-left: 1%;">
+                                <div class="form-check">
+                                    <label class="form-check-label" for="defaultCheck">
+                                        无
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="exampleFormControlInput1">单套安装费：</label>
+                            <input type="text" class="form-control" id="modal-goods-installationCharge" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="exampleFormControlInput1">数量：（套）</label>
+                            <input type="text" class="form-control" id="modal-goods-quantity" value="1">
+                        </div>
+                        <hr>
+                        <div class="form-group">
+                            <label for="exampleFormControlInput1">干线费单价：</label>
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <label class="input-group-text" for="provinceSelect">收货地址：</label>
+                                </div>
+                                <select class="form-control" id="provinceSelect">
+                                </select>
+                                <select id="citySelect" class="selectpicker show-tick form-control" multiple
+                                    data-live-search="true" multiple data-max-options="1">
+                                </select>
+                            </div>
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <label class="input-group-text" for="provinceSelect">价格：</label>
+                                </div>
+                                <input type="text" class="form-control" id="modal-goods-address" value="无" readonly
+                                    hidden>
+                                <input type="text" class="form-control" id="modal-goods-addressCost" value="0" readonly>
+                            </div>
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <label class="input-group-text" for="provinceSelect">单套体积：（方）</label>
+                                </div>
+                                <input type="text" class="form-control" id="modal-goods-v" value="2">
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="add">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+
+</html>

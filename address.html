@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【管理】干线费管理-成本计算器-</title>
+    <link rel="stylesheet" href="./bootstrap-4.6.1-dist/css/bootstrap.min.css" crossorigin="anonymous" />
+    <script type="text/javascript" src="jquery.js"></script>
+    <script type="text/javascript" src="./bootstrap-4.6.1-dist/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
+    <script type="text/javascript" src="./bootstrap-4.6.1-dist/js/bootstrap.min.js" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        function getUrlParams() {
+            var queryString = window.location.search;
+            var regex = /[?&]([^=#]+)=([^&#]*)/g;
+            var params = {};
+            var match;
+            while (match = regex.exec(queryString)) {
+                params[decodeURIComponent(match[1])] = decodeURIComponent(match[2]);
+            }
+            return params;
+        }
+
+        $(document).ready(function () {
+            var params = getUrlParams();
+            var provinceData;
+            var getProvince = {
+                "url": "http://175.178.251.107:7793/province",
+                "method": "GET",
+            };
+            $.ajax(getProvince).done(function (response) {
+                var data = response.data;
+                provinceData = response.data;
+                if (!params.provinceId) {
+                    $("#provinceSelect").append('<option selected>请选择...</option>');
+
+                }
+                for (let index = 0; index < data.length; index++) {
+                    if (params.provinceId == (index + 1)) {
+                        $("#provinceSelect").append('<option value="' + data[index].id + '" selected>' + data[index].name + '</option>');
+                        $("#provinceSelect").trigger("change");
+                    } else {
+                        $("#provinceSelect").append('<option value="' + data[index].id + '">' + data[index].name + '</option>');
+                    }
+                }
+
+            });
+            $("#provinceSelect").change(function () {
+                $("#table-body").empty();
+                var getCity = {
+                    "url": "http://175.178.251.107:7793/province/" + $(this).val(),
+                    "method": "GET",
+                    "async": false,
+                };
+                $.ajax(getCity).done(function (response) {
+                    var data = response.data;
+                    $("#table-body").on('click', 'button', function () {
+                        var type = ($(this).attr("id")).split("-")[0];
+                        var id = ($(this).attr("id")).split("-")[1];
+                        if (type == "delectCity") {
+                            var delectItem3 = {
+                                "url": "http://175.178.251.107:7793/delectCity/" + id,
+                                "method": "GET",
+                                "async": false,
+                            };
+                            $.ajax(delectItem3).done(function (response) {
+                                if (response.msg == "success") {
+                                    $("#success-modal").modal('show');
+                                } else {
+                                    $("#failed-modal").modal('show');
+                                }
+
+                            })
+                        } else {
+
+                        }
+                    });
+                    for (let index = 0; index < data.length; index++) {
+                        var tmpTemple = '<tr>'
+                            + '    <th scope="row">' + (index + 1) + '</th>'
+                            + '    <td>' + data[index].cityName + '</td>'
+                            + '    <td>' + data[index].price + '</td>'
+                            + '    <td>'
+                            + '        <button id="delectCity-' + data[index].id + '" type="button" class="btn btn-secondary btn-sm">删除</button>'
+                            + '    </td>'
+                            + '</tr>'
+                        $("#table-body").append(tmpTemple);
+                    }
+
+                });
+            });
+            $("#add-item-button").click(function () {
+                $("#add-item-modal").modal('hide');
+                if (!$.isNumeric($("#modal-item-price").val())) {
+                    $("#failed-modal").modal('show');
+                    return
+                }
+                
+                $("#loading-modal").modal('show');
+                var addItems = {
+                    "url": "http://175.178.251.107:7793/addCity",
+                    "method": "POST",
+                    "contentType": 'application/json',
+                    "data": JSON.stringify([{
+                        "provinceId": $("#modal-item-province").val(),
+                        "cityName": $("#modal-item-name").val(),
+                        "price": $("#modal-item-price").val()
+                    }]),
+                };
+                $.ajax(addItems).done(function (response) {
+                    $("#loading-modal").modal('hide');
+                    if (response.msg == "success") {
+                        $("#success-modal").modal('show');
+                    } else {
+                        $("#failed-modal").modal('show');
+                    }
+
+                })
+            });
+            $("#gohome").click(function () {
+                window.location.replace("./index.html");
+            });
+            $("#goadmin").click(function () {
+                window.location.replace("./admin.html");
+            });
+            $("#open-add-goods-modal").click(function () {
+                $("#modal-item-province").empty();
+                $("#modal-item-province").append('<option selected>请选择...</option>');
+                for (let index = 0; index < provinceData.length; index++) {
+                    $("#modal-item-province").append('<option value="' + provinceData[index].id + '">' + provinceData[index].name + '</option>');
+                }
+                $("#add-item-modal").modal('show');
+            });
+            $("#success-reload").click(function () {
+                window.location.replace("./address.html?provinceId=" + $("#provinceSelect").val());
+            });
+            $("#reload").click(function () {
+                window.location.replace("./address.html?provinceId=" + $("#provinceSelect").val());
+            });
+        });
+    </script>
+</head>
+
+<body style="padding: 10px 20px 10px 20px;">
+    <div class="card">
+        <div class="card-header">
+            成本计算器&nbsp;&nbsp;<span class="badge badge-info" style="font-size: 11px;">管理</span>
+            <button id="gohome" type="button" style="float: right;margin-left: 4px;" class="btn btn-primary">前台</button>
+            <button id="goadmin" type="button" style="float: right;" class="btn btn-info">管理面板</button>
+        </div>
+        <div class="card-body">
+            <button type="button" class="btn btn-success" id="open-add-goods-modal">新增干线费模板</button><br /><br />
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <label class="input-group-text" for="provinceSelect">省份：</label>
+                </div>
+                <select class="custom-select selectpicker" id="provinceSelect">
+                </select>
+            </div>
+
+            <div id="goods-data" style="margin-top: 10px;">
+                <table class="table">
+                    <thead class="thead-light">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">城市</th>
+                            <th scope="col">价格（元/方）</th>
+                            <th scope="col">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- loading-modal -->
+    <div class="modal fade" id="loading-modal" data-backdrop="static" data-keyboard="false" tabindex="-1"
+        aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">正在加载</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- success-modal -->
+    <div class="modal fade" id="success-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">加载成功</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center">
+                        <svg t="1673618252071" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="2732" width="64" height="64">
+                            <path
+                                d="M512 149.333333c200.298667 0 362.666667 162.368 362.666667 362.666667s-162.368 362.666667-362.666667 362.666667S149.333333 712.298667 149.333333 512 311.701333 149.333333 512 149.333333z m0 64c-164.949333 0-298.666667 133.717333-298.666667 298.666667s133.717333 298.666667 298.666667 298.666667 298.666667-133.717333 298.666667-298.666667-133.717333-298.666667-298.666667-298.666667z m169.045333 127.04l45.909334 44.586667-271.829334 279.722667-136.832-141.952 46.08-44.416 90.944 94.336 225.728-232.277334z"
+                                fill="#1afa29" p-id="2733"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" id="success-reload">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- failed-modal -->
+    <div class="modal fade" id="failed-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">加载失败</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-center">
+                        <svg t="1673618702719" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="4129" width="64" height="64">
+                            <path
+                                d="M512 128c211.2 0 384 172.8 384 384s-172.8 384-384 384-384-172.8-384-384 172.8-384 384-384m0-64C262.4 64 64 262.4 64 512s198.4 448 448 448 448-198.4 448-448-198.4-448-448-448z"
+                                fill="#333333" p-id="4130"></path>
+                            <path d="M377.6 646.4m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4131">
+                            </path>
+                            <path d="M646.4 377.6m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4132">
+                            </path>
+                            <path d="M377.6 377.6m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4133">
+                            </path>
+                            <path d="M646.4 646.4m-32 0a32 32 0 1 0 64 0 32 32 0 1 0-64 0Z" fill="#333333" p-id="4134">
+                            </path>
+                            <path d="M353.6 625.152l271.552-271.552 45.248 45.248-271.552 271.552z" fill="#333333"
+                                p-id="4135"></path>
+                            <path d="M353.6 398.848l45.248-45.248 271.552 271.552-45.248 45.248z" fill="#333333"
+                                p-id="4136"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" id="reload">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增规则 -->
+    <div class="modal fade" id="add-item-modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">添加干线费模板</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <a href="./insertAddress.html">>>批量模板添加</a>
+                    <form>
+                        <div class="form-group">
+                            <label for="modal-item-province" class="col-form-label">省份：</label>
+                            <select class="form-control" id="modal-item-province">
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="col-form-label">城市名称：</label>
+                            <textarea rows="2" class="form-control" id="modal-item-name"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="col-form-label">价格：</label>
+                            <input type="text" class="form-control" id="modal-item-price">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" id="add-item-button">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+
+
+</html>
